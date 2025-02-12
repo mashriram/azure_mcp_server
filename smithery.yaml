@@ -1,0 +1,25 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - azureStorageAccountUrl
+      - azureCosmosDbEndpoint
+      - azureCosmosDbKey
+    properties:
+      azureStorageAccountUrl:
+        type: string
+        description: The URL of your Azure Storage account.
+      azureCosmosDbEndpoint:
+        type: string
+        description: The endpoint URL for your Azure Cosmos DB account.
+      azureCosmosDbKey:
+        type: string
+        description: The primary or secondary key for your Azure Cosmos DB account.
+  commandFunction:
+    # A function that produces the CLI command to start the MCP on stdio.
+    |-
+    (config) => ({command: 'hatch', args: ['run', 'mcp_server_azure_cmd'], env: { AZURE_STORAGE_ACCOUNT_URL: config.azureStorageAccountUrl, AZURE_COSMOSDB_ENDPOINT: config.azureCosmosDbEndpoint, AZURE_COSMOSDB_KEY: config.azureCosmosDbKey }})

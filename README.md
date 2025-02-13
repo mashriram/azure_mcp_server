@@ -1,10 +1,20 @@
 # Azure MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@mashriram/azure_mcp_server)](https://smithery.ai/server/@mashriram/azure_mcp_server)
+
 An implementation of a [Model Context Protocol](https://www.anthropic.com/news/model-context-protocol) server for interacting with Azure services. Currently supports Azure Blob Storage and Azure Cosmos DB (NoSQL API). All operations performed through this server are automatically logged and accessible via the `audit://azure-operations` resource endpoint.
 
 <a href="https://glama.ai/mcp/servers/cczdogb799"><img width="380" height="200" src="https://glama.ai/mcp/servers/cczdogb799/badge" alt="Azure Server MCP server" /></a>
 
 ## Running Locally with the Claude Desktop App
+
+### Installing via Smithery
+
+To install Azure MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@mashriram/azure_mcp_server):
+
+```bash
+npx -y @smithery/cli install @mashriram/azure_mcp_server --client claude
+```
 
 ### Manual Installation
 

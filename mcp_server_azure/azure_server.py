@@ -17,6 +17,7 @@ from pydantic import AnyUrl
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from azure.appconfiguration import AzureAppConfigurationClient
 from azure.cosmos import CosmosClient
 from mcp_server_azure.azure_tools import get_azure_tools
 from mcp_server_azure.azure_utils import (
@@ -85,6 +86,24 @@ class AzureResourceManager:
         except Exception as e:
             logger.error(f"Failed to create CosmosClient: {e}")
             raise RuntimeError(f"Failed to create CosmosClient: {e}")
+        
+    @lru_cache(maxsize=None)
+    def get_app_configuration_client(
+        self, endpoint: str | None = None
+    ) -> AzureAppConfigurationClient:
+        """Get an Azure App Configuration client using AzureCliCredential."""
+        try:
+            logger.info(f"Creating AzureAppConfigurationClient")
+            endpoint = endpoint or os.getenv("AZURE_APP_CONFIGURATION_ENDPOINT")
+            if not endpoint:
+                raise ValueError(
+                    "Azure App Configuration endpoint is not specified and not set in the environment."
+                )
+    
+            return AzureAppConfigurationClient(base_url=endpoint, credential=self.credential)
+        except Exception as e:
+            logger.error(f"Failed to create AzureAppConfigurationClient: {e}")
+            raise RuntimeError(f"Failed to create AzureAppConfigurationClient: {e}")
 
     def _synthesize_audit_log(self) -> str:
         """Generate formatted audit log from entries"""
@@ -305,6 +324,97 @@ async def main():
                 text=f"Operation Result:\n{json.dumps(response, indent=2, default=custom_json_serializer)}",
             )
         ]
+    
+    async def handle_app_configuration_operations(
+        azure_rm: AzureResourceManager, name: str, arguments: dict
+    ) -> list[TextContent]:
+        """Handle Azure App Configuration operations"""
+        app_config_client = azure_rm.get_app_configuration_client()
+        response = None
+
+        if name == "app_configuration_kv_read":
+            # Get key and label from arguments, both optional
+            key = arguments.get("key", None)
+            label = arguments.get("label", None)
+            
+            # List key-values with optional filtering by key and label
+            if key:
+                settings = list(app_config_client.list_configuration_settings(
+                    key_filter=key,
+                    label_filter=label
+                ))
+            else:
+                settings = list(app_config_client.list_configuration_settings(
+                    label_filter=label
+                ))
+            
+            # Format results for display
+            result = []
+            for setting in settings:
+                result.append({
+                    "key": setting.key,
+                    "value": setting.value,
+                    "content_type": setting.content_type,
+                    "label": setting.label,
+                    "last_modified": setting.last_modified.isoformat() if setting.last_modified else None,
+                    "read_only": setting.read_only
+                })
+            response = {"settings": result}
+                
+        elif name == "app_configuration_kv_write":
+            from azure.appconfiguration import ConfigurationSetting
+            
+            # Create a configuration setting
+            setting = ConfigurationSetting(
+                key=arguments["key"],
+                value=arguments["value"],
+                label=arguments.get("label", None),
+                content_type=arguments.get("content_type", None)
+            )
+            
+            # Set or update the configuration setting
+            result = app_config_client.set_configuration_setting(setting)
+            
+            # Format result for display
+            response = {
+                "key": result.key,
+                "value": result.value,
+                "content_type": result.content_type,
+                "label": result.label,
+                "etag": result.etag,
+                "last_modified": result.last_modified.isoformat() if result.last_modified else None
+            }
+            
+        elif name == "app_configuration_kv_delete":
+            # Delete a key-value
+            result = app_config_client.delete_configuration_setting(
+                key=arguments["key"],
+                label=arguments.get("label", None)
+            )
+            
+            if result:
+                response = {
+                    "key": result.key,
+                    "label": result.label,
+                    "deleted": True
+                }
+            else:
+                response = {
+                    "key": arguments["key"],
+                    "label": arguments.get("label", None),
+                    "deleted": False,
+                    "message": "Key not found"
+                }
+        else:
+            raise ValueError(f"Unknown App Configuration operation: {name}")
+
+        azure_rm.log_operation("app_configuration", name.replace("app_configuration_", ""), arguments)
+        return [
+            TextContent(
+                type="text",
+                text=f"Operation Result:\n{json.dumps(response, indent=2, default=custom_json_serializer)}",
+            )
+        ]
 
     @server.call_tool()
     async def call_tool(
@@ -327,6 +437,10 @@ async def main():
                 return await handle_cosmosdb_operations(
                     azure_rm, name, arguments
                 )  # Use cosmosdb handler
+            elif name.startswith("app_configuration_"):
+                return await handle_app_configuration_operations(
+                    azure_rm, name, arguments
+                )  # Use app configuration handler
             else:
                 raise ValueError(f"Unknown tool: {name}")
 

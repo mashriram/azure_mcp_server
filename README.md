@@ -20,12 +20,13 @@ npx -y @smithery/cli install @mashriram/azure_mcp_server --client claude
 
 1.  **Clone the Repository:** Clone this repository to your local machine.
 
-2.  **Configure Azure Credentials:** Configure your Azure credentials. This server requires an Azure account with appropriate permissions for Blob Storage and Cosmos DB. We recommend using `DefaultAzureCredential` which attempts to authenticate via various methods in order.
+2.  **Configure Azure Credentials:** Configure your Azure credentials. This server requires an Azure account with appropriate permissions for Blob Storage, Cosmos DB and App Configuration. We recommend using `DefaultAzureCredential` which attempts to authenticate via various methods in order.
 
     *   **Environment Variables:** Set the following environment variables:
         *   `AZURE_STORAGE_ACCOUNT_URL`: The URL of your Azure Storage account (e.g., `https://<your_account_name>.blob.core.windows.net`).
         *   `AZURE_COSMOSDB_ENDPOINT`: The endpoint URL for your Azure Cosmos DB account.
         *   `AZURE_COSMOSDB_KEY`: The primary or secondary key for your Azure Cosmos DB account. **Important: Treat this key like a password and keep it secure.**
+        *   `AZURE_APP_CONFIGURATION_ENDPOINT`: The URL of your Azure App Configuration instance.
     *   **Azure CLI:** Alternatively, you can authenticate using the Azure CLI. Ensure you are logged in with an account that has the necessary permissions. This server uses `DefaultAzureCredential` so it will automatically authenticate with the Azure CLI credentials if environment variables are not specified. Use `az login` to log in.
 
 3.  **Configure Claude Desktop:** Add the following configuration to your `claude_desktop_config.json` file:
@@ -81,6 +82,12 @@ npx -y @smithery/cli install @mashriram/azure_mcp_server --client claude
 *   **cosmosdb\_item\_replace:** Replaces an existing item within a Cosmos DB container. Requires the `container_name`, `item_id`, `partition_key`, and the `item` (a JSON object representing the *complete* updated item). The `database_name` is optional and defaults to `defaultdb`. The `partition_key` *must* match the partition key value of the item being replaced.
 *   **cosmosdb\_item\_delete:** Deletes an item from a Cosmos DB container. Requires the `container_name`, `item_id`, and `partition_key`. The `database_name` is optional and defaults to `defaultdb`. The `partition_key` *must* match the partition key value of the item being deleted.
 *   **cosmosdb\_item\_query:** Queries items in a Cosmos DB container using a SQL query. Requires the `container_name` and `query`. The `database_name` is optional and defaults to `defaultdb`. Optionally accepts a `parameters` array for parameterized queries.
+
+### Azure App Configuration Operations
+
+*   **app\_configuration\_kv\_read:** Reads key-values from Azure App Configuration. The `key` parameter is optional and allows filtering by key patterns (supports wildcards, e.g., 'app1/*'). The `label` parameter is optional for filtering by label values ('\\0' for no label, '*' for any label).
+*   **app\_configuration\_kv\_write:** Writes or updates a key-value in Azure App Configuration. Requires the `key` and `value` parameters. Optional parameters include `label` to apply a label to the key-value and `content_type` to specify the content type (e.g., 'application/json').
+*   **app\_configuration\_kv\_delete:** Deletes a key-value from Azure App Configuration. Requires the `key` parameter. The `label` parameter is optional and specifies which labeled version of the key to delete.
 
 **Important Cosmos DB Notes:**
 

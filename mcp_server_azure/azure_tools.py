@@ -327,6 +327,75 @@ def get_cosmosdb_tools() -> list[Tool]:
         ),
     ]
 
+def get_app_configuration_tools() -> list[Tool]:
+    return [
+        Tool(
+            name="app_configuration_kv_read",
+            description="Read key-values from Azure App Configuration",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "The key to read (optional, use * for wildcards, e.g. 'app1/*')",
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "The label filter (optional, use '\\0' for no label, '*' for any label)",
+                    },
+                },
+                "required": [],
+            },
+        ),
+        Tool(
+            name="app_configuration_kv_write",
+            description="Write or update a key-value in Azure App Configuration",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "The key to write",
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "The value to store",
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "The label for the key-value (optional)",
+                    },
+                    "content_type": {
+                        "type": "string",
+                        "description": "Content type of the value (optional, e.g. 'application/json')",
+                    },
+                },
+                "required": ["key", "value"],
+            },
+        ),
+        Tool(
+            name="app_configuration_kv_delete",
+            description="Delete a key-value from Azure App Configuration",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "The key to delete",
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "The label of the key-value to delete (optional)",
+                    },
+                },
+                "required": ["key"],
+            },
+        ),
+    ]
 
 def get_azure_tools() -> list[Tool]:
-    return [*get_blob_storage_tools(), *get_cosmosdb_tools()]
+    return [
+        *get_blob_storage_tools(), 
+        *get_cosmosdb_tools(),
+        *get_app_configuration_tools()
+    ]

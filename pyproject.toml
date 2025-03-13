@@ -10,6 +10,7 @@ dependencies = [
     "azure-storage-blob>=12.24.1",
     "httpx>=0.28.1",
     "mcp[cli]>=1.2.1",
+    "azure-appconfiguration>=1.7.1"
 ]
 [build-system]
 requires = [ "hatchling",]
